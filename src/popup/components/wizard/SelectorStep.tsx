@@ -1,7 +1,6 @@
-import React, { useCallback, useState } from "react";
+import React from "react";
 import { Crosshair } from "lucide-react";
 import { Button } from "@/ui/Button";
-import { isInjectableUrl } from "@/lib/url-utils";
 
 export interface SelectorStepData {
   selector: string;
@@ -10,26 +9,11 @@ export interface SelectorStepData {
 interface SelectorStepProps {
   data: SelectorStepData;
   onChange: (data: SelectorStepData) => void;
+  onPickElement?: () => void;
+  pickError?: string | null;
 }
 
-export function SelectorStep({ data, onChange }: SelectorStepProps) {
-  const [error, setError] = useState<string | null>(null);
-
-  const handlePickElement = useCallback(async () => {
-    setError(null);
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.id) return;
-
-    if (!isInjectableUrl(tab.url)) {
-      setError("Cannot pick elements on this page. Navigate to a regular web page first.");
-      return;
-    }
-
-    await chrome.runtime.sendMessage({ type: "INJECT_SELECTOR", payload: { tabId: tab.id } });
-    await chrome.tabs.sendMessage(tab.id, { type: "ACTIVATE_SELECTOR" });
-    window.close();
-  }, []);
-
+export function SelectorStep({ data, onChange, onPickElement, pickError }: SelectorStepProps) {
   return (
     <div className="space-y-3">
       <div>
@@ -48,14 +32,14 @@ export function SelectorStep({ data, onChange }: SelectorStepProps) {
 
       <div className="text-center">
         <p className="text-xs text-gray-500 mb-2">Or pick an element visually:</p>
-        <Button variant="secondary" size="sm" onClick={handlePickElement}>
+        <Button variant="secondary" size="sm" onClick={onPickElement}>
           <Crosshair className="w-3.5 h-3.5 mr-1" />
           Pick Element
         </Button>
       </div>
 
-      {error && (
-        <p className="text-xs text-red-500 text-center">{error}</p>
+      {pickError && (
+        <p className="text-xs text-red-500 text-center">{pickError}</p>
       )}
 
       {data.selector && (

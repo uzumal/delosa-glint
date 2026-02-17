@@ -1,14 +1,6 @@
 import React from "react";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { SelectorStep, SelectorStepData } from "@/popup/components/wizard/SelectorStep";
-
-// Mock chrome.tabs
-beforeEach(() => {
-  (global as any).chrome.tabs = {
-    query: jest.fn(),
-    sendMessage: jest.fn(),
-  };
-});
 
 const defaults: SelectorStepData = { selector: "" };
 
@@ -35,16 +27,14 @@ test("shows selector value when provided", () => {
   expect(input.value).toBe(".my-class");
 });
 
-test("shows error when active tab is a chrome:// URL", async () => {
-  (chrome.tabs as any) = {
-    query: jest.fn().mockResolvedValue([{ id: 1, url: "chrome://extensions" }]),
-    sendMessage: jest.fn(),
-  };
+test("calls onPickElement when Pick Element button clicked", () => {
+  const onPick = jest.fn();
+  render(<SelectorStep data={defaults} onChange={jest.fn()} onPickElement={onPick} />);
+  fireEvent.click(screen.getByText("Pick Element"));
+  expect(onPick).toHaveBeenCalledTimes(1);
+});
 
-  render(<SelectorStep data={{ selector: "" }} onChange={jest.fn()} />);
-  await act(async () => {
-    fireEvent.click(screen.getByText("Pick Element"));
-  });
-
-  expect(screen.getByText(/cannot pick elements/i)).toBeTruthy();
+test("shows pickError when provided", () => {
+  render(<SelectorStep data={defaults} onChange={jest.fn()} pickError="Cannot pick on this page" />);
+  expect(screen.getByText("Cannot pick on this page")).toBeTruthy();
 });
