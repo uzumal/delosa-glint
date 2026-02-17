@@ -26,6 +26,7 @@ export class StorageHelper {
     const rules = await this.getRules();
     const filtered = rules.filter((r) => r.id !== ruleId);
     await chrome.storage.local.set({ rules: filtered });
+    await this.deleteSnapshot(ruleId);
   }
 
   static async getLogs(): Promise<LogEntry[]> {

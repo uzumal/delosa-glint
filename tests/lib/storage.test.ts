@@ -59,6 +59,17 @@ describe("rules", () => {
     await StorageHelper.deleteRule("r1");
     expect(chrome.storage.local.set).toHaveBeenCalledWith({ rules: [] });
   });
+
+  test("deleteRule also removes associated snapshot", async () => {
+    (chrome.storage.local.get as jest.Mock).mockImplementation((key: string) => {
+      if (key === "rules") return Promise.resolve({ rules: [mockRule] });
+      if (key === "snapshots") return Promise.resolve({ snapshots: { r1: "$10" } });
+      return Promise.resolve({});
+    });
+    await StorageHelper.deleteRule("r1");
+    expect(chrome.storage.local.set).toHaveBeenCalledWith({ rules: [] });
+    expect(chrome.storage.local.set).toHaveBeenCalledWith({ snapshots: {} });
+  });
 });
 
 describe("logs", () => {
