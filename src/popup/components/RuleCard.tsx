@@ -1,5 +1,5 @@
 import React from "react";
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { Rule } from "@/lib/types";
 import { Card } from "@/ui/Card";
 import { Toggle } from "@/ui/Toggle";
@@ -8,9 +8,10 @@ interface RuleCardProps {
   rule: Rule;
   onToggle: (ruleId: string) => void;
   onDelete: (ruleId: string) => void;
+  onEdit: (rule: Rule) => void;
 }
 
-export function RuleCard({ rule, onToggle, onDelete }: RuleCardProps) {
+export function RuleCard({ rule, onToggle, onDelete, onEdit }: RuleCardProps) {
   return (
     <Card className={rule.enabled ? "" : "opacity-60"}>
       <div className="flex items-start justify-between gap-2">
@@ -21,6 +22,13 @@ export function RuleCard({ rule, onToggle, onDelete }: RuleCardProps) {
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <Toggle label="" checked={rule.enabled} onChange={() => onToggle(rule.id)} />
+          <button
+            aria-label="Edit rule"
+            onClick={() => onEdit(rule)}
+            className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
           <button
             aria-label="Delete rule"
             onClick={() => onDelete(rule.id)}
