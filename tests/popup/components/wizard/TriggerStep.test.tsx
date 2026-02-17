@@ -41,3 +41,20 @@ test("hides interval input for non-periodic triggers", () => {
   render(<TriggerStep data={defaults} onChange={jest.fn()} />);
   expect(screen.queryByLabelText("Check interval (minutes)")).toBeNull();
 });
+
+test("shows validation error for empty name on blur", () => {
+  render(<TriggerStep data={defaults} onChange={jest.fn()} />);
+  fireEvent.blur(screen.getByLabelText("Rule name"));
+  expect(screen.getByText("Rule name is required")).toBeTruthy();
+});
+
+test("shows validation error for name exceeding 100 chars on blur", () => {
+  render(<TriggerStep data={{ ...defaults, name: "a".repeat(101) }} onChange={jest.fn()} />);
+  fireEvent.blur(screen.getByLabelText("Rule name"));
+  expect(screen.getByText("Rule name must be 100 characters or less")).toBeTruthy();
+});
+
+test("does not show validation error before blur", () => {
+  render(<TriggerStep data={defaults} onChange={jest.fn()} />);
+  expect(screen.queryByText("Rule name is required")).toBeNull();
+});

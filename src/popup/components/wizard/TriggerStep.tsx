@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { TriggerType } from "@/lib/types";
+import { validateRuleName, validateUrlPattern } from "@/lib/validators";
 
 export interface TriggerStepData {
   name: string;
@@ -22,6 +23,11 @@ const TRIGGER_OPTIONS: { value: TriggerType; label: string }[] = [
 ];
 
 export function TriggerStep({ data, onChange }: TriggerStepProps) {
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  const nameError = touched.name ? validateRuleName(data.name) : null;
+  const urlError = touched.urlPattern ? validateUrlPattern(data.urlPattern) : null;
+
   return (
     <div className="space-y-3">
       <div>
@@ -33,9 +39,11 @@ export function TriggerStep({ data, onChange }: TriggerStepProps) {
           type="text"
           value={data.name}
           onChange={(e) => onChange({ ...data, name: e.target.value })}
+          onBlur={() => setTouched((t) => ({ ...t, name: true }))}
           placeholder="e.g. Price Watcher"
           className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
+        {nameError && <p className="text-xs text-red-500 mt-0.5">{nameError}</p>}
       </div>
 
       <div>
@@ -47,9 +55,11 @@ export function TriggerStep({ data, onChange }: TriggerStepProps) {
           type="text"
           value={data.urlPattern}
           onChange={(e) => onChange({ ...data, urlPattern: e.target.value })}
+          onBlur={() => setTouched((t) => ({ ...t, urlPattern: true }))}
           placeholder="e.g. https://example.com/*"
           className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
+        {urlError && <p className="text-xs text-red-500 mt-0.5">{urlError}</p>}
       </div>
 
       <fieldset>
