@@ -50,9 +50,9 @@ export function CreateRuleWizard({ onDone }: CreateRuleWizardProps) {
 
       // Check for pending selection from visual picker
       const result = await chrome.storage.local.get("pendingSelection");
-      const pending = result.pendingSelection as { selector: string; url: string } | undefined;
+      const pending = result.pendingSelection as { selector: string; textPreview?: string; url: string } | undefined;
       if (pending?.selector) {
-        setSelector({ selector: pending.selector });
+        setSelector({ selector: pending.selector, textPreview: pending.textPreview });
         await chrome.storage.local.remove("pendingSelection");
       }
 

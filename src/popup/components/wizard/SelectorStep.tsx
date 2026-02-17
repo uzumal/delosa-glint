@@ -4,6 +4,7 @@ import { Button } from "@/ui/Button";
 
 export interface SelectorStepData {
   selector: string;
+  textPreview?: string;
 }
 
 interface SelectorStepProps {
@@ -46,6 +47,9 @@ export function SelectorStep({ data, onChange, onPickElement, pickError }: Selec
         <div className="bg-gray-50 rounded p-2">
           <p className="text-xs text-gray-500">Selected:</p>
           <code className="text-xs text-blue-700 break-all">{data.selector}</code>
+          {data.textPreview && (
+            <p className="text-xs text-gray-400 mt-1 truncate">Preview: {data.textPreview}</p>
+          )}
         </div>
       )}
     </div>

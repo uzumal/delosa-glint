@@ -16,7 +16,7 @@ async function handleMessage(
 ): Promise<unknown> {
   switch (message.type) {
     case "ELEMENT_SELECTED":
-      return handleElementSelected(message.payload as { selector: string; url: string });
+      return handleElementSelected(message.payload as { selector: string; textPreview?: string; url: string });
 
     case "DOM_CHANGED":
       return handleDomChanged(
@@ -64,6 +64,7 @@ async function handleMessage(
 
 async function handleElementSelected(payload: {
   selector: string;
+  textPreview?: string;
   url: string;
 }): Promise<unknown> {
   // Store the selected element info for the popup to use during rule creation
