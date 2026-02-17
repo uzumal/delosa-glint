@@ -15,7 +15,7 @@ export class DOMWatcher {
       if (!this.matchesUrl(currentUrl, rule.urlPattern)) continue;
 
       if (rule.trigger === "dom_change" && rule.selector) {
-        this.observeElement(rule);
+        await this.observeElement(rule);
       } else if (rule.trigger === "form_submit" && rule.selector) {
         this.observeForm(rule);
       } else if (rule.trigger === "click" && rule.selector) {
@@ -38,12 +38,31 @@ export class DOMWatcher {
     this.clickHandlers.clear();
   }
 
-  private observeElement(rule: Rule): void {
+  private async observeElement(rule: Rule): Promise<void> {
     if (!rule.selector) return;
     const element = document.querySelector(rule.selector);
     if (!element) return;
 
-    this.previousValues.set(rule.id, element.textContent ?? "");
+    const currentText = element.textContent ?? "";
+    const savedSnapshot = await StorageHelper.getSnapshot(rule.id);
+
+    // If we have a saved snapshot and it differs, fire change event immediately
+    if (savedSnapshot !== null && savedSnapshot !== currentText) {
+      chrome.runtime.sendMessage({
+        type: "DOM_CHANGED",
+        payload: {
+          ruleId: rule.id,
+          selector: rule.selector,
+          previous: savedSnapshot,
+          current: currentText,
+          url: window.location.href,
+        },
+      });
+    }
+
+    // Save current value as snapshot
+    await StorageHelper.saveSnapshot(rule.id, currentText);
+    this.previousValues.set(rule.id, currentText);
 
     const observer = new MutationObserver(() => {
       const current = element.textContent ?? "";
@@ -61,6 +80,8 @@ export class DOMWatcher {
           },
         });
         this.previousValues.set(rule.id, current);
+        // Persist snapshot for next session
+        StorageHelper.saveSnapshot(rule.id, current);
       }
     });
 
