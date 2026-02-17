@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { RuleList } from "@/popup/components/RuleList";
 import { Rule } from "@/lib/types";
 
@@ -22,14 +22,25 @@ beforeEach(() => {
 
 test("shows empty state when no rules", async () => {
   (chrome.storage.local.get as jest.Mock).mockResolvedValue({});
-  render(<RuleList onCreateRule={jest.fn()} />);
+  render(<RuleList onCreateRule={jest.fn()} onEditRule={jest.fn()} />);
   await act(async () => {});
   expect(screen.getByText(/no rules yet/i)).toBeTruthy();
 });
 
 test("renders rule cards when rules exist", async () => {
   (chrome.storage.local.get as jest.Mock).mockResolvedValue({ rules: [mockRule] });
-  render(<RuleList onCreateRule={jest.fn()} />);
+  render(<RuleList onCreateRule={jest.fn()} onEditRule={jest.fn()} />);
   await act(async () => {});
   expect(screen.getByText("Price Watcher")).toBeTruthy();
+});
+
+test("calls onEditRule when edit button is clicked on a rule card", async () => {
+  (chrome.storage.local.get as jest.Mock).mockResolvedValue({ rules: [mockRule] });
+
+  const onEdit = jest.fn();
+  render(<RuleList onCreateRule={jest.fn()} onEditRule={onEdit} />);
+  await act(async () => {});
+
+  fireEvent.click(screen.getByLabelText("Edit rule"));
+  expect(onEdit).toHaveBeenCalledWith(mockRule);
 });

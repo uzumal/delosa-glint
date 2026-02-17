@@ -1,13 +1,15 @@
 import React from "react";
+import { Rule } from "@/lib/types";
 import { useRules } from "@/popup/hooks/useRules";
 import { RuleCard } from "@/popup/components/RuleCard";
 import { Card } from "@/ui/Card";
 
 interface RuleListProps {
   onCreateRule: () => void;
+  onEditRule: (rule: Rule) => void;
 }
 
-export function RuleList({ onCreateRule }: RuleListProps) {
+export function RuleList({ onCreateRule, onEditRule }: RuleListProps) {
   const { rules, loading, toggleRule, deleteRule } = useRules();
 
   if (loading) {
@@ -27,7 +29,7 @@ export function RuleList({ onCreateRule }: RuleListProps) {
   return (
     <div className="space-y-2">
       {rules.map((rule) => (
-        <RuleCard key={rule.id} rule={rule} onToggle={toggleRule} onDelete={deleteRule} />
+        <RuleCard key={rule.id} rule={rule} onToggle={toggleRule} onDelete={deleteRule} onEdit={onEditRule} />
       ))}
     </div>
   );
