@@ -99,3 +99,35 @@ describe("settings", () => {
     });
   });
 });
+
+describe("snapshots", () => {
+  test("getSnapshot returns null when no snapshot exists", async () => {
+    (chrome.storage.local.get as jest.Mock).mockResolvedValue({});
+    expect(await StorageHelper.getSnapshot("r1")).toBeNull();
+  });
+
+  test("saveSnapshot stores value keyed by ruleId", async () => {
+    (chrome.storage.local.get as jest.Mock).mockResolvedValue({});
+    await StorageHelper.saveSnapshot("r1", "$10.00");
+    expect(chrome.storage.local.set).toHaveBeenCalledWith({
+      snapshots: { r1: "$10.00" },
+    });
+  });
+
+  test("getSnapshot returns saved value", async () => {
+    (chrome.storage.local.get as jest.Mock).mockResolvedValue({
+      snapshots: { r1: "$10.00", r2: "$20.00" },
+    });
+    expect(await StorageHelper.getSnapshot("r1")).toBe("$10.00");
+  });
+
+  test("deleteSnapshot removes value for ruleId", async () => {
+    (chrome.storage.local.get as jest.Mock).mockResolvedValue({
+      snapshots: { r1: "$10.00", r2: "$20.00" },
+    });
+    await StorageHelper.deleteSnapshot("r1");
+    expect(chrome.storage.local.set).toHaveBeenCalledWith({
+      snapshots: { r2: "$20.00" },
+    });
+  });
+});
