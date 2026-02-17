@@ -12,6 +12,7 @@ import { validateRuleName, validateUrlPattern, validateWebhookUrl, validateSelec
 
 interface CreateRuleWizardProps {
   onDone: () => void;
+  editRule?: Rule;
 }
 
 const STEPS_WITH_SELECTOR = ["Trigger", "Element", "Destination"];
@@ -21,16 +22,28 @@ function needsSelector(trigger: string): boolean {
   return trigger !== "page_visit" && trigger !== "periodic_check";
 }
 
-export function CreateRuleWizard({ onDone }: CreateRuleWizardProps) {
+export function CreateRuleWizard({ onDone, editRule }: CreateRuleWizardProps) {
+  const isEdit = !!editRule;
+
   const [step, setStep] = useState(0);
-  const [trigger, setTrigger] = useState<TriggerStepData>({
-    name: "",
-    urlPattern: "",
-    trigger: "dom_change",
-    intervalMinutes: undefined,
-  });
-  const [selector, setSelector] = useState<SelectorStepData>({ selector: "" });
-  const [destination, setDestination] = useState<DestinationStepData>({ url: "", label: "" });
+  const [trigger, setTrigger] = useState<TriggerStepData>(() =>
+    editRule
+      ? {
+          name: editRule.name,
+          urlPattern: editRule.urlPattern,
+          trigger: editRule.trigger,
+          intervalMinutes: editRule.intervalMinutes,
+        }
+      : { name: "", urlPattern: "", trigger: "dom_change", intervalMinutes: undefined }
+  );
+  const [selector, setSelector] = useState<SelectorStepData>(() =>
+    editRule?.selector ? { selector: editRule.selector } : { selector: "" }
+  );
+  const [destination, setDestination] = useState<DestinationStepData>(() =>
+    editRule
+      ? { url: editRule.destination.url, label: editRule.destination.label }
+      : { url: "", label: "" }
+  );
   const [pickError, setPickError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -40,6 +53,11 @@ export function CreateRuleWizard({ onDone }: CreateRuleWizardProps) {
 
   // Restore wizard state and pending selection on mount
   useEffect(() => {
+    if (isEdit) {
+      setLoaded(true);
+      return;
+    }
+
     (async () => {
       const savedState = await loadWizardState();
       if (savedState) {
@@ -97,19 +115,19 @@ export function CreateRuleWizard({ onDone }: CreateRuleWizardProps) {
   const handleSave = async () => {
     const now = new Date().toISOString();
     const rule: Rule = {
-      id: crypto.randomUUID(),
+      id: editRule?.id ?? crypto.randomUUID(),
       name: trigger.name,
-      enabled: true,
+      enabled: editRule?.enabled ?? true,
       trigger: trigger.trigger,
       urlPattern: trigger.urlPattern,
       selector: showSelector ? selector.selector : undefined,
       intervalMinutes: trigger.intervalMinutes,
       destination: {
-        id: crypto.randomUUID(),
+        id: editRule?.destination.id ?? crypto.randomUUID(),
         url: destination.url,
         label: destination.label || destination.url,
       },
-      createdAt: now,
+      createdAt: editRule?.createdAt ?? now,
       updatedAt: now,
     };
     await StorageHelper.saveRule(rule);
@@ -170,7 +188,7 @@ export function CreateRuleWizard({ onDone }: CreateRuleWizardProps) {
           </Button>
         ) : (
           <Button size="sm" onClick={handleSave} disabled={!isStepValid()}>
-            Save Rule
+            {isEdit ? "Update Rule" : "Save Rule"}
           </Button>
         )}
       </div>

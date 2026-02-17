@@ -1,6 +1,7 @@
 import React from "react";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { CreateRuleWizard } from "@/popup/components/wizard/CreateRuleWizard";
+import { Rule } from "@/lib/types";
 
 // Mock crypto.randomUUID
 Object.defineProperty(globalThis, "crypto", {
@@ -127,4 +128,66 @@ test("merges pendingSelection into restored wizard state", async () => {
 
   const input = screen.getByLabelText("CSS Selector") as HTMLInputElement;
   expect(input.value).toBe(".picked-element");
+});
+
+const editRule: Rule = {
+  id: "existing-rule-id",
+  name: "Price Watch",
+  enabled: true,
+  trigger: "dom_change",
+  urlPattern: "https://example.com/*",
+  selector: "#price",
+  destination: { id: "dest-id", url: "https://hooks.test/endpoint", label: "My Hook" },
+  createdAt: "2026-01-01T00:00:00Z",
+  updatedAt: "2026-01-01T00:00:00Z",
+};
+
+test("pre-populates fields when editRule is provided", async () => {
+  render(<CreateRuleWizard onDone={jest.fn()} editRule={editRule} />);
+  await act(async () => {});
+
+  // Step 0: Trigger — should show pre-filled name
+  const nameInput = screen.getByLabelText("Rule name") as HTMLInputElement;
+  expect(nameInput.value).toBe("Price Watch");
+  const urlInput = screen.getByLabelText("URL pattern") as HTMLInputElement;
+  expect(urlInput.value).toBe("https://example.com/*");
+});
+
+test("shows Update Rule button in edit mode on final step", async () => {
+  const editRulePageVisit: Rule = {
+    ...editRule,
+    trigger: "page_visit",
+    selector: undefined,
+  };
+  render(<CreateRuleWizard onDone={jest.fn()} editRule={editRulePageVisit} />);
+  await act(async () => {});
+
+  // Fill step 0 and go to destination
+  fireEvent.click(screen.getByText("Next"));
+  expect(screen.getByText("Update Rule")).toBeTruthy();
+});
+
+test("preserves original id and createdAt when saving edited rule", async () => {
+  const editRulePageVisit: Rule = {
+    ...editRule,
+    trigger: "page_visit",
+    selector: undefined,
+  };
+  render(<CreateRuleWizard onDone={jest.fn()} editRule={editRulePageVisit} />);
+  await act(async () => {});
+
+  fireEvent.click(screen.getByText("Next"));
+
+  await act(async () => {
+    fireEvent.click(screen.getByText("Update Rule"));
+  });
+
+  // Verify the saved rule preserves original id
+  const savedCall = (chrome.storage.local.set as jest.Mock).mock.calls.find(
+    (call: any[]) => call[0].rules
+  );
+  expect(savedCall).toBeTruthy();
+  const savedRules = savedCall[0].rules;
+  expect(savedRules[0].id).toBe("existing-rule-id");
+  expect(savedRules[0].createdAt).toBe("2026-01-01T00:00:00Z");
 });
