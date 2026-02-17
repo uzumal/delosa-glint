@@ -8,6 +8,7 @@ import { TriggerStep, TriggerStepData } from "./TriggerStep";
 import { SelectorStep, SelectorStepData } from "./SelectorStep";
 import { DestinationStep, DestinationStepData } from "./DestinationStep";
 import { saveWizardState, loadWizardState, clearWizardState } from "@/popup/hooks/useWizardPersistence";
+import { validateRuleName, validateUrlPattern, validateWebhookUrl, validateSelector } from "@/lib/validators";
 
 interface CreateRuleWizardProps {
   onDone: () => void;
@@ -117,10 +118,16 @@ export function CreateRuleWizard({ onDone }: CreateRuleWizardProps) {
   };
 
   const isStepValid = (): boolean => {
-    if (step === 0) return trigger.name.trim() !== "" && trigger.urlPattern.trim() !== "";
-    if (showSelector && step === 1) return selector.selector.trim() !== "";
+    if (step === 0) {
+      return validateRuleName(trigger.name) === null && validateUrlPattern(trigger.urlPattern) === null;
+    }
+    if (showSelector && step === 1) {
+      return validateSelector(selector.selector) === null;
+    }
     const destStep = showSelector ? 2 : 1;
-    if (step === destStep) return destination.url.trim() !== "";
+    if (step === destStep) {
+      return validateWebhookUrl(destination.url) === null;
+    }
     return true;
   };
 
