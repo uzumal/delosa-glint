@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Rule } from "@/lib/types";
 import { StorageHelper } from "@/lib/storage";
+import { isInjectableUrl } from "@/lib/url-utils";
 import { Button } from "@/ui/Button";
 import { StepIndicator } from "@/popup/components/StepIndicator";
 import { TriggerStep, TriggerStepData } from "./TriggerStep";
 import { SelectorStep, SelectorStepData } from "./SelectorStep";
 import { DestinationStep, DestinationStepData } from "./DestinationStep";
+import { saveWizardState, loadWizardState, clearWizardState } from "@/popup/hooks/useWizardPersistence";
 
 interface CreateRuleWizardProps {
   onDone: () => void;
@@ -28,21 +30,55 @@ export function CreateRuleWizard({ onDone }: CreateRuleWizardProps) {
   });
   const [selector, setSelector] = useState<SelectorStepData>({ selector: "" });
   const [destination, setDestination] = useState<DestinationStepData>({ url: "", label: "" });
+  const [pickError, setPickError] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   const showSelector = needsSelector(trigger.trigger);
   const steps = showSelector ? STEPS_WITH_SELECTOR : STEPS_WITHOUT_SELECTOR;
   const lastStep = steps.length - 1;
 
-  // Check for pending selection from visual picker
+  // Restore wizard state and pending selection on mount
   useEffect(() => {
-    chrome.storage.local.get("pendingSelection").then((result) => {
+    (async () => {
+      const savedState = await loadWizardState();
+      if (savedState) {
+        setStep(savedState.step);
+        setTrigger(savedState.trigger);
+        setSelector(savedState.selector);
+        setDestination(savedState.destination);
+      }
+
+      // Check for pending selection from visual picker
+      const result = await chrome.storage.local.get("pendingSelection");
       const pending = result.pendingSelection as { selector: string; url: string } | undefined;
       if (pending?.selector) {
         setSelector({ selector: pending.selector });
-        chrome.storage.local.remove("pendingSelection");
+        await chrome.storage.local.remove("pendingSelection");
       }
-    });
+
+      // Clear wizard state now that we've loaded it
+      await clearWizardState();
+      setLoaded(true);
+    })();
   }, []);
+
+  const handlePickElement = useCallback(async () => {
+    setPickError(null);
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) return;
+
+    if (!isInjectableUrl(tab.url)) {
+      setPickError("Cannot pick elements on this page. Navigate to a regular web page first.");
+      return;
+    }
+
+    // Save wizard state before closing
+    await saveWizardState({ step, trigger, selector, destination });
+
+    await chrome.runtime.sendMessage({ type: "INJECT_SELECTOR", payload: { tabId: tab.id } });
+    await chrome.tabs.sendMessage(tab.id, { type: "ACTIVATE_SELECTOR" });
+    window.close();
+  }, [step, trigger, selector, destination]);
 
   const handleNext = () => {
     if (step < lastStep) setStep(step + 1);
@@ -50,6 +86,11 @@ export function CreateRuleWizard({ onDone }: CreateRuleWizardProps) {
 
   const handleBack = () => {
     if (step > 0) setStep(step - 1);
+  };
+
+  const handleCancel = async () => {
+    await clearWizardState();
+    onDone();
   };
 
   const handleSave = async () => {
@@ -71,6 +112,7 @@ export function CreateRuleWizard({ onDone }: CreateRuleWizardProps) {
       updatedAt: now,
     };
     await StorageHelper.saveRule(rule);
+    await clearWizardState();
     onDone();
   };
 
@@ -87,10 +129,19 @@ export function CreateRuleWizard({ onDone }: CreateRuleWizardProps) {
       return <TriggerStep data={trigger} onChange={setTrigger} />;
     }
     if (showSelector && step === 1) {
-      return <SelectorStep data={selector} onChange={setSelector} />;
+      return (
+        <SelectorStep
+          data={selector}
+          onChange={setSelector}
+          onPickElement={handlePickElement}
+          pickError={pickError}
+        />
+      );
     }
     return <DestinationStep data={destination} onChange={setDestination} />;
   };
+
+  if (!loaded) return null;
 
   return (
     <div className="space-y-3">
@@ -102,7 +153,7 @@ export function CreateRuleWizard({ onDone }: CreateRuleWizardProps) {
             Back
           </Button>
         ) : (
-          <Button variant="secondary" size="sm" onClick={onDone}>
+          <Button variant="secondary" size="sm" onClick={handleCancel}>
             Cancel
           </Button>
         )}
