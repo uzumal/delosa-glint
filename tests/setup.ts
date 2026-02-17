@@ -8,6 +8,7 @@ Object.assign(global, {
       local: {
         get: jest.fn(),
         set: jest.fn(),
+        remove: jest.fn(),
       },
     },
     runtime: {
