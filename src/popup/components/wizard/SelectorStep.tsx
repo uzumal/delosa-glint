@@ -16,12 +16,9 @@ export function SelectorStep({ data, onChange }: SelectorStepProps) {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id) return;
 
-    // Inject selector content script if not already present, then activate
-    chrome.tabs.sendMessage(tab.id, { type: "ACTIVATE_SELECTOR" });
-
-    // Close popup — selector works on the page. User re-opens popup after picking.
-    // The selected element is saved to chrome.storage.local.pendingSelection
-    // by the service worker, and the wizard reads it on next open.
+    // Inject selector script, then activate
+    await chrome.runtime.sendMessage({ type: "INJECT_SELECTOR", payload: { tabId: tab.id } });
+    await chrome.tabs.sendMessage(tab.id, { type: "ACTIVATE_SELECTOR" });
     window.close();
   }, []);
 
