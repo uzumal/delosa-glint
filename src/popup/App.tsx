@@ -1,14 +1,25 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Webhook, Plus, List, ScrollText } from "lucide-react";
 import { Button } from "@/ui/Button";
 import { RuleList } from "@/popup/components/RuleList";
 import { LogList } from "@/popup/components/LogList";
 import { CreateRuleWizard } from "@/popup/components/wizard/CreateRuleWizard";
+import { loadWizardState } from "@/popup/hooks/useWizardPersistence";
 
 type View = "rules" | "create" | "logs";
 
 export function App() {
   const [view, setView] = useState<View>("rules");
+
+  useEffect(() => {
+    (async () => {
+      const savedState = await loadWizardState();
+      const pending = await chrome.storage.local.get("pendingSelection");
+      if (savedState || pending.pendingSelection) {
+        setView("create");
+      }
+    })();
+  }, []);
 
   return (
     <div className="p-4">
