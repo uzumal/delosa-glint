@@ -33,6 +33,16 @@ async function handleMessage(
         message.payload as { ruleId: string; formData: Record<string, string>; url: string },
       );
 
+    case "CLICK_EVENT":
+      return handleClickEvent(
+        message.payload as { ruleId: string; selector: string; url: string },
+      );
+
+    case "PAGE_VISITED":
+      return handlePageVisited(
+        message.payload as { ruleId: string; url: string },
+      );
+
     case "INJECT_SELECTOR": {
       const { tabId } = message.payload as { tabId: number };
       await chrome.scripting.executeScript({
@@ -86,6 +96,35 @@ async function handleFormSubmitted(payload: {
   return dispatchWebhook(rule, "form_submit", {
     type: "submit",
     current: JSON.stringify(payload.formData),
+  });
+}
+
+async function handleClickEvent(payload: {
+  ruleId: string;
+  selector: string;
+  url: string;
+}): Promise<unknown> {
+  const rules = await StorageHelper.getRules();
+  const rule = rules.find((r) => r.id === payload.ruleId);
+  if (!rule || !rule.enabled) return { skipped: true };
+
+  return dispatchWebhook(rule, "click", {
+    type: "click",
+    current: payload.selector,
+  });
+}
+
+async function handlePageVisited(payload: {
+  ruleId: string;
+  url: string;
+}): Promise<unknown> {
+  const rules = await StorageHelper.getRules();
+  const rule = rules.find((r) => r.id === payload.ruleId);
+  if (!rule || !rule.enabled) return { skipped: true };
+
+  return dispatchWebhook(rule, "page_visit", {
+    type: "visit",
+    current: payload.url,
   });
 }
 
