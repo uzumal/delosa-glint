@@ -29,3 +29,21 @@ test("calls onChange when label is typed", () => {
   fireEvent.change(screen.getByLabelText("Label"), { target: { value: "My Slack" } });
   expect(onChange).toHaveBeenCalledWith({ url: "", label: "My Slack" });
 });
+
+test("shows validation error for invalid webhook URL on blur", () => {
+  render(<DestinationStep data={{ url: "not-a-url", label: "" }} onChange={jest.fn()} />);
+  fireEvent.blur(screen.getByLabelText("Webhook URL"));
+  expect(screen.getByText("Must be a valid URL (http:// or https://)")).toBeTruthy();
+});
+
+test("shows no error for valid https URL after blur", () => {
+  render(<DestinationStep data={{ url: "https://hooks.slack.com/test", label: "" }} onChange={jest.fn()} />);
+  fireEvent.blur(screen.getByLabelText("Webhook URL"));
+  expect(screen.queryByText(/must be a valid/i)).toBeNull();
+});
+
+test("shows validation error for empty webhook URL on blur", () => {
+  render(<DestinationStep data={{ url: "", label: "" }} onChange={jest.fn()} />);
+  fireEvent.blur(screen.getByLabelText("Webhook URL"));
+  expect(screen.getByText("Webhook URL is required")).toBeTruthy();
+});

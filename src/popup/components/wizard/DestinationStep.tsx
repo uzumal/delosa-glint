@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { validateWebhookUrl } from "@/lib/validators";
 
 export interface DestinationStepData {
   url: string;
@@ -11,6 +12,10 @@ interface DestinationStepProps {
 }
 
 export function DestinationStep({ data, onChange }: DestinationStepProps) {
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  const urlError = touched.url ? validateWebhookUrl(data.url) : null;
+
   return (
     <div className="space-y-3">
       <div>
@@ -22,9 +27,11 @@ export function DestinationStep({ data, onChange }: DestinationStepProps) {
           type="url"
           value={data.url}
           onChange={(e) => onChange({ ...data, url: e.target.value })}
+          onBlur={() => setTouched((t) => ({ ...t, url: true }))}
           placeholder="https://hooks.slack.com/services/..."
           className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
+        {urlError && <p className="text-xs text-red-500 mt-0.5">{urlError}</p>}
       </div>
 
       <div>
