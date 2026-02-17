@@ -1,0 +1,47 @@
+{
+  "name": "browserhook-extension",
+  "version": "0.1.0",
+  "description": "Chrome extension that converts browser events into webhooks",
+  "private": true,
+  "scripts": {
+    "build": "webpack --mode production",
+    "dev": "webpack --mode development --watch",
+    "test": "jest",
+    "lint": "eslint 'src/**/*.{ts,tsx}'"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "lucide-react": "^0.574.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/chrome": "^0.1.36",
+    "@types/jest": "^27.5.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "autoprefixer": "^10.4.24",
+    "copy-webpack-plugin": "^13.0.1",
+    "css-loader": "^7.1.4",
+    "eslint": "^9.39.2",
+    "html-webpack-plugin": "^5.6.6",
+    "jest": "^27.5.1",
+    "jest-chrome": "^0.8.0",
+    "jest-environment-jsdom": "^27.5.1",
+    "mini-css-extract-plugin": "^2.10.0",
+    "postcss": "^8.5.6",
+    "postcss-loader": "^8.2.1",
+    "prettier": "^3.8.1",
+    "style-loader": "^4.0.0",
+    "tailwindcss": "^4.1.18",
+    "ts-jest": "^27.1.5",
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.9.3",
+    "webpack": "^5.105.2",
+    "webpack-cli": "^6.0.1"
+  }
+}
