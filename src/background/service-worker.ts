@@ -1,5 +1,6 @@
 import { StorageHelper } from "@/lib/storage";
 import { WebhookSender } from "@/lib/webhook";
+import { isInjectableUrl } from "@/lib/url-utils";
 import { ExtensionMessage, LogEntry, Rule, TriggerType, WebhookPayload } from "@/lib/types";
 
 const EXTENSION_VERSION = "0.1.0";
@@ -45,6 +46,10 @@ async function handleMessage(
 
     case "INJECT_SELECTOR": {
       const { tabId } = message.payload as { tabId: number };
+      const tab = await chrome.tabs.get(tabId);
+      if (!isInjectableUrl(tab.url)) {
+        return { error: "Cannot inject into this page. Navigate to a regular web page first." };
+      }
       await chrome.scripting.executeScript({
         target: { tabId },
         files: ["content/selector.js"],
