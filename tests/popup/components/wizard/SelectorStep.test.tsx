@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { SelectorStep, SelectorStepData } from "@/popup/components/wizard/SelectorStep";
 
 // Mock chrome.tabs
@@ -33,4 +33,18 @@ test("shows selector value when provided", () => {
   render(<SelectorStep data={{ selector: ".my-class" }} onChange={jest.fn()} />);
   const input = screen.getByLabelText("CSS Selector") as HTMLInputElement;
   expect(input.value).toBe(".my-class");
+});
+
+test("shows error when active tab is a chrome:// URL", async () => {
+  (chrome.tabs as any) = {
+    query: jest.fn().mockResolvedValue([{ id: 1, url: "chrome://extensions" }]),
+    sendMessage: jest.fn(),
+  };
+
+  render(<SelectorStep data={{ selector: "" }} onChange={jest.fn()} />);
+  await act(async () => {
+    fireEvent.click(screen.getByText("Pick Element"));
+  });
+
+  expect(screen.getByText(/cannot pick elements/i)).toBeTruthy();
 });

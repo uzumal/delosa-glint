@@ -1,6 +1,7 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { Crosshair } from "lucide-react";
 import { Button } from "@/ui/Button";
+import { isInjectableUrl } from "@/lib/url-utils";
 
 export interface SelectorStepData {
   selector: string;
@@ -12,11 +13,18 @@ interface SelectorStepProps {
 }
 
 export function SelectorStep({ data, onChange }: SelectorStepProps) {
+  const [error, setError] = useState<string | null>(null);
+
   const handlePickElement = useCallback(async () => {
+    setError(null);
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id) return;
 
-    // Inject selector script, then activate
+    if (!isInjectableUrl(tab.url)) {
+      setError("Cannot pick elements on this page. Navigate to a regular web page first.");
+      return;
+    }
+
     await chrome.runtime.sendMessage({ type: "INJECT_SELECTOR", payload: { tabId: tab.id } });
     await chrome.tabs.sendMessage(tab.id, { type: "ACTIVATE_SELECTOR" });
     window.close();
@@ -45,6 +53,10 @@ export function SelectorStep({ data, onChange }: SelectorStepProps) {
           Pick Element
         </Button>
       </div>
+
+      {error && (
+        <p className="text-xs text-red-500 text-center">{error}</p>
+      )}
 
       {data.selector && (
         <div className="bg-gray-50 rounded p-2">
