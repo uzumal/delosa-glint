@@ -12,7 +12,7 @@ const mockState: WizardState = {
   step: 1,
   trigger: { name: "Price Watch", urlPattern: "https://example.com/*", trigger: "dom_change", intervalMinutes: undefined },
   selector: { selector: "" },
-  destination: { url: "", label: "" },
+  destination: { type: "generic", url: "", label: "" },
 };
 
 test("saveWizardState stores state to chrome.storage.local", async () => {

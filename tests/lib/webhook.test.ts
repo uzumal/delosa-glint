@@ -3,6 +3,7 @@ import { Destination, WebhookPayload } from "@/lib/types";
 
 const mockDestination: Destination = {
   id: "d1",
+  type: "generic",
   url: "https://hooks.example.com/webhook",
   label: "Test Hook",
 };
@@ -14,7 +15,7 @@ const mockPayload: WebhookPayload = {
   change: { type: "mutation", previous: "$10", current: "$12" },
   timestamp: "2026-01-01T00:00:00Z",
   meta: { browser: "chrome", extensionVersion: "0.1.0" },
-  powered_by: "BrowserHook",
+  powered_by: "Delosa Glint",
 };
 
 beforeEach(() => {

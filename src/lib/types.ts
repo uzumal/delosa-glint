@@ -5,8 +5,11 @@ export type TriggerType =
   | "form_submit"
   | "periodic_check";
 
+export type DestinationType = "generic" | "text";
+
 export interface Destination {
   id: string;
+  type: DestinationType;
   url: string;
   label: string;
   headers?: Record<string, string>;

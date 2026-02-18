@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Webhook, Plus, List, ScrollText } from "lucide-react";
+import { Plus, List, ScrollText, HelpCircle } from "lucide-react";
 import { Rule } from "@/lib/types";
 import { Button } from "@/ui/Button";
 import { RuleList } from "@/popup/components/RuleList";
@@ -12,13 +12,19 @@ type View = "rules" | "create" | "edit" | "logs";
 export function App() {
   const [view, setView] = useState<View>("rules");
   const [editingRule, setEditingRule] = useState<Rule | undefined>(undefined);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       const savedState = await loadWizardState();
       const pending = await chrome.storage.local.get("pendingSelection");
       if (savedState || pending.pendingSelection) {
-        setView("create");
+        if (savedState?.editRuleSnapshot) {
+          setEditingRule(savedState.editRuleSnapshot);
+          setView("edit");
+        } else {
+          setView("create");
+        }
       }
     })();
   }, []);
@@ -28,23 +34,35 @@ export function App() {
     setView("edit");
   };
 
-  const handleWizardDone = () => {
+  const handleWizardDone = (saved?: boolean) => {
     setEditingRule(undefined);
     setView("rules");
+    if (saved) {
+      setSaveMessage("対象ページを更新すると、監視が開始されます");
+      setTimeout(() => setSaveMessage(null), 5000);
+    }
   };
 
   const showWizard = view === "create" || view === "edit";
 
   return (
-    <div className="p-4">
-      <header className="flex items-center justify-between mb-4">
+    <div className="flex h-screen flex-col">
+      <header className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3">
         <div className="flex items-center gap-2">
-          <Webhook className="w-5 h-5 text-blue-600" />
-          <h1 className="text-lg font-semibold">BrowserHook</h1>
+          <img src="../icons/logo.png" alt="Delosa Glint" className="w-5 h-5 rounded" />
+          <h1 className="text-lg font-semibold">Delosa Glint</h1>
         </div>
         <div className="flex items-center gap-1">
           {!showWizard && (
             <>
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label="Usage guide"
+                onClick={() => chrome.tabs.create({ url: chrome.runtime.getURL("onboarding/onboarding.html") })}
+              >
+                <HelpCircle className="w-4 h-4" />
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
@@ -68,7 +86,7 @@ export function App() {
               variant="ghost"
               size="sm"
               aria-label="View rules"
-              onClick={handleWizardDone}
+              onClick={() => handleWizardDone()}
             >
               <List className="w-4 h-4" />
             </Button>
@@ -76,10 +94,21 @@ export function App() {
         </div>
       </header>
 
-      {view === "rules" && <RuleList onCreateRule={() => setView("create")} onEditRule={handleEditRule} />}
-      {view === "create" && <CreateRuleWizard onDone={handleWizardDone} />}
-      {view === "edit" && <CreateRuleWizard onDone={handleWizardDone} editRule={editingRule} />}
-      {view === "logs" && <LogList />}
+      <div className="flex-1 overflow-y-auto p-4">
+        {view === "rules" && (
+          <>
+            {saveMessage && (
+              <div className="mb-2 p-2 bg-blue-50 text-blue-700 text-xs rounded border border-blue-200">
+                {saveMessage}
+              </div>
+            )}
+            <RuleList onCreateRule={() => setView("create")} onEditRule={handleEditRule} />
+          </>
+        )}
+        {view === "create" && <CreateRuleWizard onDone={handleWizardDone} />}
+        {view === "edit" && <CreateRuleWizard onDone={handleWizardDone} editRule={editingRule} />}
+        {view === "logs" && <LogList />}
+      </div>
     </div>
   );
 }

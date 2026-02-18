@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "BrowserHook",
+  "name": "Delosa Glint",
   "version": "0.1.0",
   "description": "Convert any browser event into a webhook — no-code automation for any website.",
   "permissions": ["activeTab", "storage", "alarms", "notifications", "scripting"],
@@ -24,7 +24,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["http://*/*", "https://*/*"],
+      "matches": ["http://*/*", "https://*/*", "file:///*"],
       "js": ["content/observer.js"],
       "run_at": "document_idle"
     }

@@ -10,10 +10,10 @@ beforeEach(() => {
   (chrome.storage.local.remove as jest.Mock).mockResolvedValue(undefined);
 });
 
-test("renders BrowserHook header", async () => {
+test("renders Delosa Glint header", async () => {
   render(<App />);
   await act(async () => {});
-  expect(screen.getByText("BrowserHook")).toBeTruthy();
+  expect(screen.getByText("Delosa Glint")).toBeTruthy();
 });
 
 test("shows rule list by default", async () => {

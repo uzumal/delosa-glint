@@ -8,7 +8,7 @@ const mockRule: Rule = {
   trigger: "dom_change",
   urlPattern: "https://*",
   selector: "#el",
-  destination: { id: "d1", url: "https://example.com", label: "Test" },
+  destination: { id: "d1", type: "generic", url: "https://example.com", label: "Test" },
   createdAt: "2026-01-01T00:00:00Z",
   updatedAt: "2026-01-01T00:00:00Z",
 };

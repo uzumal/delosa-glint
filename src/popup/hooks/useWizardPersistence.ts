@@ -1,3 +1,4 @@
+import { Rule } from "@/lib/types";
 import { TriggerStepData } from "@/popup/components/wizard/TriggerStep";
 import { SelectorStepData } from "@/popup/components/wizard/SelectorStep";
 import { DestinationStepData } from "@/popup/components/wizard/DestinationStep";
@@ -7,6 +8,7 @@ export interface WizardState {
   trigger: TriggerStepData;
   selector: SelectorStepData;
   destination: DestinationStepData;
+  editRuleSnapshot?: Rule;
 }
 
 export async function saveWizardState(state: WizardState): Promise<void> {

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BrowserHook DOM Change Test Page</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
+    h1 { color: #1a1a2e; }
+    .product { border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .product h2 { margin-top: 0; }
+    #price { font-size: 2rem; font-weight: bold; color: #e63946; }
+    .stock-status { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 0.875rem; font-weight: 600; }
+    .stock-status.in-stock { background: #d4edda; color: #155724; }
+    .stock-status.out-of-stock { background: #f8d7da; color: #721c24; }
+    .controls { margin: 20px 0; display: flex; gap: 8px; flex-wrap: wrap; }
+    button { padding: 8px 16px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; background: #f8f9fa; }
+    button:hover { background: #e9ecef; }
+    .instructions { background: #f0f7ff; border: 1px solid #b8daff; border-radius: 8px; padding: 16px; margin: 20px 0; }
+    .instructions h3 { margin-top: 0; color: #004085; }
+    .instructions code { background: #e2e8f0; padding: 2px 6px; border-radius: 3px; font-size: 0.875rem; }
+    .log { font-size: 0.75rem; color: #666; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <h1>BrowserHook Test Page</h1>
+
+  <div class="instructions">
+    <h3>How to test DOM change detection</h3>
+    <p style="margin-bottom: 12px;">
+      <strong>Recommended:</strong> Serve this page via HTTP for easiest setup:<br>
+      <code>python3 -m http.server 8080 -d demo</code> → access at <code>http://localhost:8080</code><br>
+      <small>If using <code>file://</code> directly, enable "Allow access to file URLs" for the extension in <code>chrome://extensions</code>.</small>
+    </p>
+    <ol>
+      <li>Load the BrowserHook extension in Chrome</li>
+      <li>Open the extension popup and create a new rule</li>
+      <li>Set trigger to <strong>DOM Change</strong></li>
+      <li>Use <strong>Pick Element</strong> to select the price (<code>#price</code>) or stock status (<code>.stock-status</code>)</li>
+      <li>Set a webhook URL (use <a href="https://webhook.site" target="_blank">webhook.site</a> for testing)</li>
+      <li>Save the rule, then wait for price changes or click the buttons below</li>
+    </ol>
+  </div>
+
+  <div class="product">
+    <h2>Hi There</h2>
+    <p>Wireless Bluetooth Headphones</p>
+    <div>
+      <span>Price: </span><span id="price">$100.99</span>
+    </div>
+    <div style="margin-top: 8px;">
+      <span>Status: </span><span class="stock-status in-stock" id="stock">In Stock</span>
+    </div>
+    <p class="log" id="change-log">Last change: none</p>
+  </div>
+
+  <div class="controls">
+    <button onclick="changePrice()">Change Price</button>
+    <button onclick="toggleStock()">Toggle Stock Status</button>
+    <button onclick="startAutoChange()">Start Auto-Change (10s)</button>
+    <button onclick="stopAutoChange()">Stop Auto-Change</button>
+  </div>
+
+  <script>
+    const prices = [29.99, 39.99, 49.99, 59.99, 69.99, 79.99, 19.99, 99.99];
+    let autoInterval = null;
+
+    function changePrice() {
+      const el = document.getElementById('price');
+      const current = el.textContent;
+      let newPrice;
+      do {
+        newPrice = prices[Math.floor(Math.random() * prices.length)];
+      } while ('$' + newPrice.toFixed(2) === current);
+      el.textContent = '$' + newPrice.toFixed(2);
+      logChange('Price changed to $' + newPrice.toFixed(2));
+    }
+
+    function toggleStock() {
+      const el = document.getElementById('stock');
+      if (el.classList.contains('in-stock')) {
+        el.classList.remove('in-stock');
+        el.classList.add('out-of-stock');
+        el.textContent = 'Out of Stock';
+      } else {
+        el.classList.remove('out-of-stock');
+        el.classList.add('in-stock');
+        el.textContent = 'In Stock';
+      }
+      logChange('Stock status toggled to: ' + el.textContent);
+    }
+
+    function startAutoChange() {
+      if (autoInterval) return;
+      autoInterval = setInterval(() => {
+        changePrice();
+      }, 10000);
+      logChange('Auto-change started (every 10s)');
+    }
+
+    function stopAutoChange() {
+      if (autoInterval) {
+        clearInterval(autoInterval);
+        autoInterval = null;
+        logChange('Auto-change stopped');
+      }
+    }
+
+    function logChange(msg) {
+      document.getElementById('change-log').textContent = 'Last change: ' + msg + ' (' + new Date().toLocaleTimeString() + ')';
+    }
+  </script>
+</body>
+</html>

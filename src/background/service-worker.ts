@@ -149,7 +149,7 @@ async function dispatchWebhook(
       browser: "chrome",
       extensionVersion: EXTENSION_VERSION,
     },
-    powered_by: "BrowserHook",
+    powered_by: "Delosa Glint",
   };
 
   const result = await WebhookSender.send(rule.destination, webhookPayload);
@@ -194,8 +194,13 @@ async function setupAlarms(): Promise<void> {
   }
 }
 
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener((details) => {
   setupAlarms();
+  if (details.reason === "install") {
+    chrome.tabs.create({
+      url: chrome.runtime.getURL("onboarding/onboarding.html"),
+    });
+  }
 });
 
 chrome.runtime.onStartup.addListener(() => {

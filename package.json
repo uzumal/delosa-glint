@@ -1,5 +1,5 @@
 {
-  "name": "browserhook-extension",
+  "name": "delosa-glint-extension",
   "version": "0.1.0",
   "description": "Chrome extension that converts browser events into webhooks",
   "private": true,

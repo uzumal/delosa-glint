@@ -88,7 +88,7 @@ test("restores wizard state from storage on mount", async () => {
           step: 1,
           trigger: { name: "Price Watch", urlPattern: "https://example.com/*", trigger: "dom_change", intervalMinutes: undefined },
           selector: { selector: "#price" },
-          destination: { url: "", label: "" },
+          destination: { type: "generic", url: "", label: "" },
         },
       });
     }
@@ -113,7 +113,7 @@ test("merges pendingSelection into restored wizard state", async () => {
           step: 1,
           trigger: { name: "Price Watch", urlPattern: "https://example.com/*", trigger: "dom_change", intervalMinutes: undefined },
           selector: { selector: "" },
-          destination: { url: "", label: "" },
+          destination: { type: "generic", url: "", label: "" },
         },
       });
     }
@@ -137,7 +137,7 @@ const editRule: Rule = {
   trigger: "dom_change",
   urlPattern: "https://example.com/*",
   selector: "#price",
-  destination: { id: "dest-id", url: "https://hooks.test/endpoint", label: "My Hook" },
+  destination: { id: "dest-id", type: "generic", url: "https://hooks.test/endpoint", label: "My Hook" },
   createdAt: "2026-01-01T00:00:00Z",
   updatedAt: "2026-01-01T00:00:00Z",
 };
@@ -190,4 +190,41 @@ test("preserves original id and createdAt when saving edited rule", async () => 
   const savedRules = savedCall[0].rules;
   expect(savedRules[0].id).toBe("existing-rule-id");
   expect(savedRules[0].createdAt).toBe("2026-01-01T00:00:00Z");
+});
+
+test("editing a rule replaces it in storage, not duplicates it", async () => {
+  const existingRule: Rule = { ...editRule };
+
+  // Mock get to return existing rules when saveRule reads them
+  (chrome.storage.local.get as jest.Mock).mockImplementation((key: string) => {
+    if (key === "rules") return Promise.resolve({ rules: [existingRule] });
+    return Promise.resolve({});
+  });
+
+  render(<CreateRuleWizard onDone={jest.fn()} editRule={existingRule} />);
+  await act(async () => {});
+
+  // Modify name
+  fireEvent.change(screen.getByLabelText("Rule name"), { target: { value: "Updated Name" } });
+
+  // Navigate to selector step
+  fireEvent.click(screen.getByText("Next"));
+  // Navigate to destination step
+  fireEvent.click(screen.getByText("Next"));
+
+  await act(async () => {
+    fireEvent.click(screen.getByText("Update Rule"));
+  });
+
+  // Find the set call that wrote rules
+  const savedCall = (chrome.storage.local.set as jest.Mock).mock.calls.find(
+    (call: any[]) => call[0].rules
+  );
+  expect(savedCall).toBeTruthy();
+
+  // CRITICAL: should be exactly 1 rule (replaced), not 2 (duplicated)
+  const savedRules = savedCall[0].rules;
+  expect(savedRules).toHaveLength(1);
+  expect(savedRules[0].id).toBe("existing-rule-id");
+  expect(savedRules[0].name).toBe("Updated Name");
 });

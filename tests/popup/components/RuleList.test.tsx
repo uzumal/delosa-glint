@@ -10,7 +10,7 @@ const mockRule: Rule = {
   trigger: "dom_change",
   urlPattern: "https://example.com/*",
   selector: "#price",
-  destination: { id: "d1", url: "https://hooks.example.com/webhook", label: "My Hook" },
+  destination: { id: "d1", type: "generic", url: "https://hooks.example.com/webhook", label: "My Hook" },
   createdAt: "2026-01-01T00:00:00Z",
   updatedAt: "2026-01-01T00:00:00Z",
 };

@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { DestinationType } from "@/lib/types";
 import { validateWebhookUrl } from "@/lib/validators";
 
 export interface DestinationStepData {
+  type: DestinationType;
   url: string;
   label: string;
 }
@@ -19,6 +21,21 @@ export function DestinationStep({ data, onChange }: DestinationStepProps) {
   return (
     <div className="space-y-3">
       <div>
+        <label htmlFor="payload-format" className="block text-xs font-medium text-gray-700 mb-1">
+          Payload Format
+        </label>
+        <select
+          id="payload-format"
+          value={data.type}
+          onChange={(e) => onChange({ ...data, type: e.target.value as DestinationType })}
+          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+        >
+          <option value="generic">Generic (Raw JSON)</option>
+          <option value="text">Text Message (Slack, Webex, Google Chat)</option>
+        </select>
+      </div>
+
+      <div>
         <label htmlFor="webhook-url" className="block text-xs font-medium text-gray-700 mb-1">
           Webhook URL
         </label>
@@ -28,7 +45,7 @@ export function DestinationStep({ data, onChange }: DestinationStepProps) {
           value={data.url}
           onChange={(e) => onChange({ ...data, url: e.target.value })}
           onBlur={() => setTouched((t) => ({ ...t, url: true }))}
-          placeholder="https://hooks.slack.com/services/..."
+          placeholder={data.type === "text" ? "https://hooks.slack.com/services/..." : "https://example.com/webhook"}
           className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
         {urlError && <p className="text-xs text-red-500 mt-0.5">{urlError}</p>}

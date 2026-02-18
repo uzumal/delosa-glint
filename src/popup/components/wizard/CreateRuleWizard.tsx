@@ -11,7 +11,7 @@ import { saveWizardState, loadWizardState, clearWizardState } from "@/popup/hook
 import { validateRuleName, validateUrlPattern, validateWebhookUrl, validateSelector } from "@/lib/validators";
 
 interface CreateRuleWizardProps {
-  onDone: () => void;
+  onDone: (saved?: boolean) => void;
   editRule?: Rule;
 }
 
@@ -41,8 +41,8 @@ export function CreateRuleWizard({ onDone, editRule }: CreateRuleWizardProps) {
   );
   const [destination, setDestination] = useState<DestinationStepData>(() =>
     editRule
-      ? { url: editRule.destination.url, label: editRule.destination.label }
-      : { url: "", label: "" }
+      ? { type: editRule.destination.type ?? "generic", url: editRule.destination.url, label: editRule.destination.label }
+      : { type: "generic", url: "", label: "" }
   );
   const [pickError, setPickError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -53,21 +53,19 @@ export function CreateRuleWizard({ onDone, editRule }: CreateRuleWizardProps) {
 
   // Restore wizard state and pending selection on mount
   useEffect(() => {
-    if (isEdit) {
-      setLoaded(true);
-      return;
-    }
-
     (async () => {
-      const savedState = await loadWizardState();
-      if (savedState) {
-        setStep(savedState.step);
-        setTrigger(savedState.trigger);
-        setSelector(savedState.selector);
-        setDestination(savedState.destination);
+      if (!isEdit) {
+        // Create mode: restore full wizard state
+        const savedState = await loadWizardState();
+        if (savedState) {
+          setStep(savedState.step);
+          setTrigger(savedState.trigger);
+          setSelector(savedState.selector);
+          setDestination(savedState.destination);
+        }
       }
 
-      // Check for pending selection from visual picker
+      // Check for pending selection from visual picker (create/edit共通)
       const result = await chrome.storage.local.get("pendingSelection");
       const pending = result.pendingSelection as { selector: string; textPreview?: string; url: string } | undefined;
       if (pending?.selector) {
@@ -92,12 +90,12 @@ export function CreateRuleWizard({ onDone, editRule }: CreateRuleWizardProps) {
     }
 
     // Save wizard state before closing
-    await saveWizardState({ step, trigger, selector, destination });
+    await saveWizardState({ step, trigger, selector, destination, editRuleSnapshot: editRule });
 
     await chrome.runtime.sendMessage({ type: "INJECT_SELECTOR", payload: { tabId: tab.id } });
     await chrome.tabs.sendMessage(tab.id, { type: "ACTIVATE_SELECTOR" });
     window.close();
-  }, [step, trigger, selector, destination]);
+  }, [step, trigger, selector, destination, editRule]);
 
   const handleNext = () => {
     if (step < lastStep) setStep(step + 1);
@@ -124,6 +122,7 @@ export function CreateRuleWizard({ onDone, editRule }: CreateRuleWizardProps) {
       intervalMinutes: trigger.intervalMinutes,
       destination: {
         id: editRule?.destination.id ?? crypto.randomUUID(),
+        type: destination.type,
         url: destination.url,
         label: destination.label || destination.url,
       },
@@ -132,7 +131,7 @@ export function CreateRuleWizard({ onDone, editRule }: CreateRuleWizardProps) {
     };
     await StorageHelper.saveRule(rule);
     await clearWizardState();
-    onDone();
+    onDone(true);
   };
 
   const isStepValid = (): boolean => {
